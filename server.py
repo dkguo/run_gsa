@@ -1,6 +1,6 @@
 from multiprocessing.connection import Listener
 
-address = ('172.26.28.10', 6000)  # Remote server address
+address = ('128.2.205.54', 60888)  # Remote server address
 
 def start_server():
     with Listener(address) as listener:
