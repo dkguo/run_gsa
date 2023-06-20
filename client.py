@@ -1,6 +1,6 @@
 from multiprocessing.connection import Client
 
-address = ('autobot.vision.cs.cmu.edu', 6000)  # Remote server address
+address = ('128.2.205.54', 6000)  # Remote server address
 
 def start_client():
     with Client(address) as conn:
