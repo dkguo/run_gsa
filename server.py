@@ -85,6 +85,7 @@ def start_server():
     print("Server is listening on {}:{}".format(*server_address))
 
     predictor = Predictor()
+    print('Server started. Waiting for connections...')
 
     while True:
         conn = listener.accept()
