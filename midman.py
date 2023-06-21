@@ -15,8 +15,11 @@ def start_midman():
             print('Connected to the server:', midman_address)
             conn2server.send(client_msg)
             while True:
-                server_msg = conn2server.recv()
-                conn2client.send(server_msg)
+                try:
+                    server_msg = conn2server.recv()
+                    conn2client.send(server_msg)
+                except EOFError:
+                    break
 
 
 if __name__ == '__main__':
