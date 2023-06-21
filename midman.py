@@ -1,9 +1,7 @@
 from multiprocessing import Process
 from multiprocessing.connection import Listener, Client
 
-
-midman_address = ('128.2.205.54', 60888)
-server_address = ('autobot-1-1', 61888)
+from config import server_address, midman_address
 
 
 def handle_client(conn2client):
@@ -17,6 +15,7 @@ def handle_client(conn2client):
             except EOFError:
                 break
     conn2client.close()
+    print('Connection closed:', conn2client.last_accepted)
 
 
 def start_midman():

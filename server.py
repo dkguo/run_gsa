@@ -7,6 +7,8 @@ import torchvision
 
 import sys
 
+from config import server_address
+
 gsa_path = '/home/jianrenw/project_data/Grounded-Segment-Anything'
 
 sys.path.append(gsa_path)
@@ -81,7 +83,6 @@ def handle_client(conn, predictor):
 
 
 def start_server(predictor):
-    server_address = ('autobot-1-1', 61888)
     listener = Listener(server_address)
     print("Server is listening on {}:{}".format(*server_address))
 

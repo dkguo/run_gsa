@@ -1,6 +1,6 @@
 from multiprocessing.connection import Client
 
-midman_address = ('128.2.205.54', 60888)  # Remote server address
+from config import midman_address
 
 
 def start_client():
