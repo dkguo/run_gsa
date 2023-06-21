@@ -1,22 +1,92 @@
+from multiprocessing import Process
 from multiprocessing.connection import Listener
 
-server_address = ('10.1.1.110', 61888)
+import cv2
+import torch
+import torchvision
+
+import sys
+
+gsa_path = '/home/jianrenw/project_data/Grounded-Segment-Anything'
+
+sys.path.append(gsa_path)
+
+from segment_anything import build_sam, SamPredictor
+from utils import load_model, get_grounding_output, load_image, load_image_from_cv
 
 
-def start_server():
-    with Listener(server_address) as listener:
-        print('Server started. Listening for connections...')
-        conn = listener.accept()  # Wait for a connection from a client
-        print('Connection accepted from:', listener.last_accepted)
+class Predictor:
+    def __init__(self):
+        checkpoint = f'{gsa_path}/sam_vit_h_4b8939.pth'
+        print('Loading SAM predictor...')
+        self.predictor = SamPredictor(build_sam(checkpoint=checkpoint))
 
-        msg = conn.recv()
-        print('Client:', msg)
+        grounded_checkpoint = f'{gsa_path}/groundingdino_swint_ogc.pth'
+        config_file = f'{gsa_path}/GroundingDINO/groundingdino/config/GroundingDINO_SwinT_OGC.py'
+        self.device = 'cuda'
+        print('Loading GroundingDINO model...')
+        self.model = load_model(config_file, grounded_checkpoint, device=self.device)
 
-        # Send messages to the client
-        conn.send('Hello, client!')
-        conn.send('This is the server.')
-        conn.send('Goodbye!')
+    def predict(self, image, text_prompt):
+        box_threshold = 0.5
+        text_threshold = 0.3
+        iou_threshold = 0.5
+
+        image_pil, image_transfromed = load_image_from_cv(image)
+        boxes_filt, scores, pred_phrases = get_grounding_output(
+            self.model, image_transfromed, text_prompt, box_threshold, text_threshold, device=self.device
+        )
+
+        size = image_pil.size
+        H, W = size[1], size[0]
+        for i in range(boxes_filt.size(0)):
+            boxes_filt[i] = boxes_filt[i] * torch.Tensor([W, H, W, H])
+            boxes_filt[i][:2] -= boxes_filt[i][2:] / 2
+            boxes_filt[i][2:] += boxes_filt[i][:2]
+
+        boxes_filt = boxes_filt.cpu()
+        nms_idx = torchvision.ops.nms(boxes_filt, scores, iou_threshold).numpy().tolist()
+        boxes_filt = boxes_filt[nms_idx]
+        pred_phrases = [pred_phrases[idx] for idx in nms_idx]
+
+        self.predictor.set_image(image)
+
+        transformed_boxes = self.predictor.transform.apply_boxes_torch(boxes_filt, image.shape[:2])
+
+        masks, _, _ = self.predictor.predict_torch(
+            point_coords=None,
+            point_labels=None,
+            boxes=transformed_boxes,
+            multimask_output=False,
+        )
+        return pred_phrases, masks.numpy(), boxes_filt.numpy()
+
+
+def handle_client(conn, predictor):
+    while True:
+        try:
+            args = conn.recv()
+            if not args:
+                break
+            print('Received arguments. Predicting...')
+            prediction = predictor.predict(*args)
+            conn.send(prediction)
+        except EOFError:
+            break
+
+    conn.close()
+
+
+def start_server(predictor):
+    server_address = ('10.1.1.110', 61888)
+    listener = Listener(server_address)
+    print("Server is listening on {}:{}".format(*server_address))
+
+    while True:
+        conn = listener.accept()
+        p = Process(target=handle_client, args=(conn, predictor))
+        p.start()
 
 
 if __name__ == '__main__':
-    start_server()
+    start_server(Predictor())
