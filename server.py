@@ -6,10 +6,11 @@ import torchvision
 
 import sys
 
-server_address = ('autobot-1-10', 61088)
+from config import server_address
+
 gsa_path = '/home/jianrenw/project_data/Grounded-Segment-Anything'
 
-# sys.path.append(gsa_path)
+sys.path.append(gsa_path)
 
 from segment_anything import build_sam, SamPredictor
 from utils import load_model, get_grounding_output, load_image_from_cv
@@ -30,6 +31,7 @@ class Predictor:
     def predict(self, image, text_prompt, box_threshold=0.5, text_threshold=0.3, iou_threshold=0.5):
         print('Predicting grounding...')
         image_pil, image_transfromed = load_image_from_cv(image)
+        print(image_pil.size, image_transfromed.size)
         boxes_filt, scores, pred_phrases = get_grounding_output(
             self.model, image_transfromed, text_prompt, box_threshold, text_threshold, device=self.device
         )
