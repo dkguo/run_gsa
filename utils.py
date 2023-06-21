@@ -15,6 +15,7 @@ def load_image_from_cv(image):
     print(image)
     print(type(image))
     print(image.shape)
+    image = np.array(image)
     image_pil = Image.fromarray(image)
     print(image_pil.size)
     transform = T.Compose(
