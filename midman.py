@@ -1,7 +1,7 @@
 from multiprocessing.connection import Listener, Client
 
 midman_address = ('128.2.205.54', 60888)
-server_address = ('10.1.1.110', 68888)
+server_address = ('10.1.1.110', 61888)
 
 def start_midman():
     with Listener(midman_address) as listener:
