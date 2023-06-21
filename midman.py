@@ -15,7 +15,6 @@ def handle_client(conn2client):
             except EOFError:
                 break
     conn2client.close()
-    print('Connection closed:', conn2client.last_accepted)
 
 
 def start_midman():
