@@ -63,19 +63,13 @@ class Predictor:
 
 
 def handle_client(conn, predictor):
-    while True:
-        try:
-            args = conn.recv()
-            if not args:
-                break
-            print('Received arguments. Predicting...')
-            prediction = predictor.predict(*args)
-            conn.send(prediction)
-        except EOFError:
-            break
-        except:
-            conn.send(None)
-            break
+    try:
+        args = conn.recv()
+        print('Received arguments. Predicting...')
+        prediction = predictor.predict(*args)
+        conn.send(prediction)
+    except:
+        conn.send(None)
 
     conn.close()
 
