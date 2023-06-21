@@ -25,9 +25,9 @@ def load_image_from_cv(image):
         ]
     )
     print(transform)
-    image, _ = transform(image_pil, None)  # 3, h, w
-    print(image.size)
-    return image_pil, image
+    image_tensor, _ = transform(image_pil, None)  # 3, h, w
+    print(image_tensor.size)
+    return image_pil, image_tensor
 
 
 def load_image(image_path):
