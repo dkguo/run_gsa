@@ -10,7 +10,7 @@ from config import server_address
 
 gsa_path = '/home/jianrenw/project_data/Grounded-Segment-Anything'
 
-sys.path.append(gsa_path)
+# sys.path.append(gsa_path)
 
 from segment_anything import build_sam, SamPredictor
 from utils import load_model, get_grounding_output, load_image_from_cv
