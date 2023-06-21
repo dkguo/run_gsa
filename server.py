@@ -80,9 +80,11 @@ def handle_client(conn, predictor):
     conn.close()
 
 
-def start_server(predictor):
+def start_server():
     listener = Listener(server_address)
     print("Server is listening on {}:{}".format(*server_address))
+
+    predictor = Predictor()
 
     while True:
         conn = listener.accept()
@@ -91,4 +93,4 @@ def start_server(predictor):
 
 
 if __name__ == '__main__':
-    start_server(Predictor())
+    start_server()
