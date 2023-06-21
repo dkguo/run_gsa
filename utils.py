@@ -3,6 +3,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 import torch
 from PIL import Image
+import cv2
 
 # Grounding DINO
 import GroundingDINO.groundingdino.datasets.transforms as T
@@ -15,7 +16,12 @@ def load_image_from_cv(image):
     print(image)
     print(type(image))
     print(image.shape)
-    image = np.array(image)
+    # save image and reload
+    cv2.imwrite('test.jpg', image)
+    # image = cv2.imread('test.jpg')
+    # image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
+    #
+    # image_pil = Image.fromarray(image)
     image_pil = Image.fromarray(image)
     print(image_pil.size)
     transform = T.Compose(
