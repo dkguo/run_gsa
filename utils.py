@@ -12,6 +12,7 @@ from GroundingDINO.groundingdino.util.utils import clean_state_dict, get_phrases
 
 
 def load_image_from_cv(image):
+    print(image)
     print(image.shape)
     image_pil = Image.fromarray(image)
     print(image_pil.size)
