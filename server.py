@@ -1,7 +1,6 @@
 from multiprocessing import Process
 from multiprocessing.connection import Listener
 
-import cv2
 import torch
 import torchvision
 
@@ -14,7 +13,7 @@ gsa_path = '/home/jianrenw/project_data/Grounded-Segment-Anything'
 sys.path.append(gsa_path)
 
 from segment_anything import build_sam, SamPredictor
-from utils import load_model, get_grounding_output, load_image, load_image_from_cv
+from utils import load_model, get_grounding_output, load_image_from_cv
 
 
 class Predictor:
