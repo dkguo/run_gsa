@@ -13,15 +13,6 @@ from GroundingDINO.groundingdino.util.utils import clean_state_dict, get_phrases
 
 
 def load_image_from_cv(image):
-    print(image)
-    print(type(image))
-    print(image.shape)
-    # save image and reload
-    cv2.imwrite('test.jpg', image)
-    # image = cv2.imread('test.jpg')
-    # image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
-    #
-    # image_pil = Image.fromarray(image)
     image_pil = Image.fromarray(image)
     print(image_pil.size)
     transform = T.Compose(

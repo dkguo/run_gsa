@@ -89,8 +89,9 @@ def start_server():
 
     while True:
         conn = listener.accept()
-        p = Process(target=handle_client, args=(conn, predictor))
-        p.start()
+        handle_client(conn, predictor)
+        # p = Process(target=handle_client, args=(conn, predictor))
+        # p.start()
 
 
 if __name__ == '__main__':
