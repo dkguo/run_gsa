@@ -73,6 +73,9 @@ def handle_client(conn, predictor):
             conn.send(prediction)
         except EOFError:
             break
+        except:
+            conn.send(None)
+            break
 
     conn.close()
 
