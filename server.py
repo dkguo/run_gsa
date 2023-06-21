@@ -78,7 +78,7 @@ def handle_client(conn, predictor):
 
 
 def start_server(predictor):
-    server_address = ('10.1.1.110', 61888)
+    server_address = ('autobot-1-1', 61888)
     listener = Listener(server_address)
     print("Server is listening on {}:{}".format(*server_address))
 
