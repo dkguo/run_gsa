@@ -29,16 +29,14 @@ class Predictor:
         print('Loading GroundingDINO model...')
         self.model = load_model(config_file, grounded_checkpoint, device=self.device)
 
-    def predict(self, image, text_prompt):
-        box_threshold = 0.5
-        text_threshold = 0.3
-        iou_threshold = 0.5
-
+    def predict(self, image, text_prompt, box_threshold=0.5, text_threshold=0.3, iou_threshold=0.5):
+        print('Predicting grounding...')
         image_pil, image_transfromed = load_image_from_cv(image)
         boxes_filt, scores, pred_phrases = get_grounding_output(
             self.model, image_transfromed, text_prompt, box_threshold, text_threshold, device=self.device
         )
 
+        print('Predicting segmentation...')
         size = image_pil.size
         H, W = size[1], size[0]
         for i in range(boxes_filt.size(0)):
@@ -52,15 +50,15 @@ class Predictor:
         pred_phrases = [pred_phrases[idx] for idx in nms_idx]
 
         self.predictor.set_image(image)
-
         transformed_boxes = self.predictor.transform.apply_boxes_torch(boxes_filt, image.shape[:2])
-
         masks, _, _ = self.predictor.predict_torch(
             point_coords=None,
             point_labels=None,
             boxes=transformed_boxes,
             multimask_output=False,
         )
+
+        print('Prediction done.')
         return pred_phrases, masks.numpy(), boxes_filt.numpy()
 
 
