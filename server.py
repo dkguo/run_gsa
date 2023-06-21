@@ -6,8 +6,7 @@ import torchvision
 
 import sys
 
-from config import server_address
-
+server_address = ('autobot-1-10', 61088)
 gsa_path = '/home/jianrenw/project_data/Grounded-Segment-Anything'
 
 # sys.path.append(gsa_path)
