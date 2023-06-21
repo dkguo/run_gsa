@@ -24,7 +24,7 @@ class Predictor:
 
         grounded_checkpoint = f'{gsa_path}/groundingdino_swint_ogc.pth'
         config_file = f'{gsa_path}/GroundingDINO/groundingdino/config/GroundingDINO_SwinT_OGC.py'
-        self.device = 'cuda:6'
+        self.device = 'cuda'
         print('Loading GroundingDINO model...')
         self.model = load_model(config_file, grounded_checkpoint, device=self.device)
 
