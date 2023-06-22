@@ -25,6 +25,8 @@ def handle_client(conn):
         while True:
             for predictor in predictors:
                 if predictor.state == 'idle':
+                    print(f'Sending request to Predictor {predictor.name}...')
+                    print(args)
                     predictor.state = 'busy'
                     predictor.conn.send(args)
                     print(f'Request received. Waiting for Predictor {predictor.name}...')
