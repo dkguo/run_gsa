@@ -1,14 +1,13 @@
 import time
-from dataclasses import dataclass
 from multiprocessing import Process
 from multiprocessing.connection import Listener, Connection
+from typing import NamedTuple
 
 midman_address = ('128.2.205.54', 60888)
 predictors = []
 
 
-@dataclass
-class Predictor:
+class Predictor(NamedTuple):
     conn: Connection
     state: str
 
