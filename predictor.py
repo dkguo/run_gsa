@@ -31,13 +31,11 @@ class Predictor:
         self.model = load_model(config_file, grounded_checkpoint, device=self.device)
 
     def predict(self, image, text_prompt, box_threshold=0.5, text_threshold=0.3, iou_threshold=0.5):
-        print(f'Predictor {self.name}: Predicting grounding...')
         image_pil, image_transfromed = load_image_from_cv(image)
         boxes_filt, scores, pred_phrases = get_grounding_output(
             self.model, image_transfromed, text_prompt, box_threshold, text_threshold, device=self.device
         )
 
-        print(f'Predictor {self.name}: Predicting segmentation...')
         size = image_pil.size
         H, W = size[1], size[0]
         for i in range(boxes_filt.size(0)):
@@ -59,7 +57,6 @@ class Predictor:
             multimask_output=False,
         )
 
-        print(f'Predictor {self.name}: Prediction done.')
         return pred_phrases, masks.numpy(), boxes_filt.numpy()
 
 
@@ -74,6 +71,7 @@ def start_predictor():
             args = conn.recv()
             print(f'Predictor {name} received arguments. Predicting...')
             prediction = predictor.predict(*args)
+            print(f'Predictor {name}: Prediction done.')
             conn.send(prediction)
         except:
             conn.send(None)
