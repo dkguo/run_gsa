@@ -1,12 +1,12 @@
 from multiprocessing import Process
-from multiprocessing.connection import Listener
+from multiprocessing.connection import Listener, Client
 
 import torch
 import torchvision
 
 import sys
 
-from config import server_address
+from midman import midman_address
 
 gsa_path = '/home/jianrenw/project_data/Grounded-Segment-Anything'
 
@@ -17,7 +17,9 @@ from utils import load_model, get_grounding_output, load_image_from_cv
 
 
 class Predictor:
-    def __init__(self):
+    def __init__(self, name):
+        self.name = name
+
         checkpoint = f'{gsa_path}/sam_vit_h_4b8939.pth'
         print('Loading SAM predictor...')
         self.predictor = SamPredictor(build_sam(checkpoint=checkpoint))
@@ -62,31 +64,21 @@ class Predictor:
         return pred_phrases, masks.numpy(), boxes_filt.numpy()
 
 
-def handle_client(conn, predictor):
-    try:
-        args = conn.recv()
-        print('Received arguments. Predicting...')
-        prediction = predictor.predict(*args)
-        conn.send(prediction)
-    except:
-        conn.send(None)
-
-    conn.close()
-
-
-def start_server():
-    listener = Listener(server_address)
-    print("Server is listening on {}:{}".format(*server_address))
-
-    predictor = Predictor()
-    print('Server started. Waiting for connections...')
-
+def start_predictor():
+    conn = Client(midman_address)
+    conn.send('This is predictor.')
+    name = conn.recv()
+    predictor = Predictor(name)
+    print(f'Predictor {name} connected to the server.')
     while True:
-        conn = listener.accept()
-        handle_client(conn, predictor)
-        # p = Process(target=handle_client, args=(conn, predictor))
-        # p.start()
+        try:
+            args = conn.recv()
+            print('Received arguments. Predicting...')
+            prediction = predictor.predict(*args)
+            conn.send(prediction)
+        except:
+            conn.send(None)
 
 
 if __name__ == '__main__':
-    start_server()
+    start_predictor()
