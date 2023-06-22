@@ -6,7 +6,7 @@ if __name__ == '__main__':
 
     processes = []
     for i in range(num_gpus):
-        process = subprocess.Popen(f'CUDA_VISIBLE_DEVICES={i} python predictor.py')
+        process = subprocess.Popen(f'CUDA_VISIBLE_DEVICES={i} python predictor.py', shell=True)
         processes.append(process)
 
     try:
