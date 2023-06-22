@@ -25,7 +25,7 @@ def handle_client(conn, predictor_conns, predictor_states):
         args = hello_msg
         print('Received arguments.')
         while True:
-            for pred_i, pred_conn, is_idle in enumerate(zip(predictor_conns, predictor_states)):
+            for pred_i, (pred_conn, is_idle) in enumerate(zip(predictor_conns, predictor_states)):
                 if is_idle:
                     print(f'Sending request to Predictor {pred_i}...')
                     print(args)
