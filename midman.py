@@ -1,10 +1,7 @@
 import time
-from multiprocessing import Process
+from multiprocessing import Process, Manager
 from multiprocessing.connection import Listener, Connection
 from typing import NamedTuple
-
-midman_address = ('128.2.205.54', 60888)
-predictors = []
 
 
 class Predictor(NamedTuple):
@@ -12,7 +9,7 @@ class Predictor(NamedTuple):
     state: str
 
 
-def handle_client(conn):
+def handle_client(conn, predictors):
     hello_msg = conn.recv()
     if type(hello_msg) == str and 'predictor' in hello_msg:
         # register predictor
@@ -41,13 +38,17 @@ def handle_client(conn):
 
 
 def start_midman():
+    midman_address = ('128.2.205.54', 60888)
+    manager = Manager()
+    predictors = manager.list()
+
     listener = Listener(midman_address)
     print('Server started. Listening for connections...')
 
     while True:
         conn = listener.accept()
         print('Connection accepted from:', listener.last_accepted)
-        p = Process(target=handle_client, args=[conn])
+        p = Process(target=handle_client, args=[conn, predictors])
         p.start()
 
 
