@@ -29,12 +29,14 @@ def handle_client(conn, predictors):
                 if predictor.state == 'idle':
                     print(f'Sending request to Predictor {predictor.name}...')
                     print(args)
-                    predictor.state = 'busy'
+                    with predictors.get_lock():
+                        predictor.state = 'busy'
                     predictor.conn.send(args)
                     print(f'Request received. Waiting for Predictor {predictor.name}...')
                     prediction = predictor.conn.recv()
                     print(f'Predictor {predictor.name} finished.')
-                    predictor.state = 'idle'
+                    with predictors.get_lock():
+                        predictor.state = 'idle'
                     conn.send(prediction)
                     return
             time.sleep(10)
