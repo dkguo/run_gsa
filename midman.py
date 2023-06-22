@@ -22,6 +22,7 @@ def handle_client(conn):
         print(f'Predictor {name} connected.')
     else:
         args = hello_msg
+        print('Received arguments.')
         while True:
             for predictor in predictors:
                 if predictor.state == 'idle':
