@@ -3,6 +3,8 @@ from multiprocessing import Process, Manager
 from multiprocessing.connection import Listener, Connection
 from typing import NamedTuple
 
+midman_address = ('128.2.205.54', 60888)
+
 
 class Predictor(NamedTuple):
     conn: Connection
@@ -38,7 +40,6 @@ def handle_client(conn, predictors):
 
 
 def start_midman():
-    midman_address = ('128.2.205.54', 60888)
     manager = Manager()
     predictors = manager.list()
 
