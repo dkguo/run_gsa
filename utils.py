@@ -14,7 +14,6 @@ from GroundingDINO.groundingdino.util.utils import clean_state_dict, get_phrases
 
 def load_image_from_cv(image):
     image_pil = Image.fromarray(image)
-    # print(image_pil.size)
     transform = T.Compose(
         [
             T.RandomResize([800], max_size=1333),
@@ -22,9 +21,7 @@ def load_image_from_cv(image):
             T.Normalize([0.485, 0.456, 0.406], [0.229, 0.224, 0.225]),
         ]
     )
-    # print(transform)
     image_tensor, _ = transform(image_pil, None)  # 3, h, w
-    # print(image_tensor.size)
     return image_pil, image_tensor
 
 

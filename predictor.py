@@ -21,24 +21,23 @@ class Predictor:
         self.name = name
 
         checkpoint = f'{gsa_path}/sam_vit_h_4b8939.pth'
-        print('Loading SAM predictor...')
+        print(f'Predictor {name}: Loading SAM predictor...')
         self.predictor = SamPredictor(build_sam(checkpoint=checkpoint))
 
         grounded_checkpoint = f'{gsa_path}/groundingdino_swint_ogc.pth'
         config_file = f'{gsa_path}/GroundingDINO/groundingdino/config/GroundingDINO_SwinT_OGC.py'
         self.device = 'cuda'
-        print('Loading GroundingDINO model...')
+        print(f'Predictor {name}: Loading GroundingDINO model...')
         self.model = load_model(config_file, grounded_checkpoint, device=self.device)
 
     def predict(self, image, text_prompt, box_threshold=0.5, text_threshold=0.3, iou_threshold=0.5):
-        print('Predicting grounding...')
+        print(f'Predictor {self.name}: Predicting grounding...')
         image_pil, image_transfromed = load_image_from_cv(image)
-        print(image_pil.size, image_transfromed.size)
         boxes_filt, scores, pred_phrases = get_grounding_output(
             self.model, image_transfromed, text_prompt, box_threshold, text_threshold, device=self.device
         )
 
-        print('Predicting segmentation...')
+        print(f'Predictor {self.name}: Predicting segmentation...')
         size = image_pil.size
         H, W = size[1], size[0]
         for i in range(boxes_filt.size(0)):
@@ -60,7 +59,7 @@ class Predictor:
             multimask_output=False,
         )
 
-        print('Prediction done.')
+        print(f'Predictor {self.name}: Prediction done.')
         return pred_phrases, masks.numpy(), boxes_filt.numpy()
 
 
@@ -73,7 +72,7 @@ def start_predictor():
     while True:
         try:
             args = conn.recv()
-            print('Received arguments. Predicting...')
+            print(f'Predictor {name} received arguments. Predicting...')
             prediction = predictor.predict(*args)
             conn.send(prediction)
         except:

@@ -1,15 +1,8 @@
 import time
 from multiprocessing import Process, Manager, Array
-from multiprocessing.connection import Listener, Connection
-from typing import NamedTuple
+from multiprocessing.connection import Listener
 
 midman_address = ('128.2.205.54', 60888)
-
-
-class Predictor(NamedTuple):
-    name: str
-    conn: Connection
-    state: str
 
 
 def handle_client(conn, predictor_conns, predictor_states):
@@ -23,12 +16,9 @@ def handle_client(conn, predictor_conns, predictor_states):
         print(f'Predictor {idx} connected.')
     else:
         args = hello_msg
-        print('Received arguments.')
         while True:
             for pred_i, (pred_conn, is_idle) in enumerate(zip(predictor_conns, predictor_states)):
                 if is_idle:
-                    print(f'Sending request to Predictor {pred_i}...')
-                    print(args)
                     with predictor_states.get_lock():
                         predictor_states[pred_i] = False
                     pred_conn.send(args)
