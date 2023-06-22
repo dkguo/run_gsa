@@ -14,7 +14,7 @@ class Predictor(NamedTuple):
 
 def handle_client(conn):
     hello_msg = conn.recv()
-    if 'predictor' in hello_msg:
+    if type(hello_msg) == str and 'predictor' in hello_msg:
         # register predictor
         name = str(len(predictors))
         conn.send(name)
