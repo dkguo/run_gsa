@@ -7,6 +7,7 @@ midman_address = ('128.2.205.54', 60888)
 
 
 class Predictor(NamedTuple):
+    name: str
     conn: Connection
     state: str
 
@@ -17,7 +18,7 @@ def handle_client(conn, predictors):
         # register predictor
         name = str(len(predictors))
         conn.send(name)
-        predictors.append(Predictor(conn, 'idle'))
+        predictors.append(Predictor(name, conn, 'idle'))
         print(f'Predictor {name} connected.')
     else:
         args = hello_msg
