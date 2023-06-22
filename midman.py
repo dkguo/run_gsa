@@ -1,5 +1,5 @@
 import time
-from multiprocessing import Process, Manager
+from multiprocessing import Process, Manager, Array
 from multiprocessing.connection import Listener, Connection
 from typing import NamedTuple
 
@@ -12,31 +12,31 @@ class Predictor(NamedTuple):
     state: str
 
 
-def handle_client(conn, predictors):
+def handle_client(conn, predictor_conns, predictor_states):
     hello_msg = conn.recv()
     if type(hello_msg) == str and 'predictor' in hello_msg:
         # register predictor
-        name = str(len(predictors))
-        conn.send(name)
-        predictors.append(Predictor(name, conn, 'idle'))
-        print(f'Predictor {name} connected.')
+        idx = len(predictor_conns)
+        conn.send(str(idx))
+        predictor_conns.append(conn)
+        predictor_states[idx] = True
+        print(f'Predictor {idx} connected.')
     else:
         args = hello_msg
         print('Received arguments.')
-        print([predictor.state for predictor in predictors])
         while True:
-            for predictor in predictors:
-                if predictor.state == 'idle':
-                    print(f'Sending request to Predictor {predictor.name}...')
+            for pred_i, pred_conn, is_idle in enumerate(zip(predictor_conns, predictor_states)):
+                if is_idle:
+                    print(f'Sending request to Predictor {pred_i}...')
                     print(args)
-                    with predictors.get_lock():
-                        predictor.state = 'busy'
-                    predictor.conn.send(args)
-                    print(f'Request received. Waiting for Predictor {predictor.name}...')
-                    prediction = predictor.conn.recv()
-                    print(f'Predictor {predictor.name} finished.')
-                    with predictors.get_lock():
-                        predictor.state = 'idle'
+                    with predictor_states.get_lock():
+                        predictor_states[pred_i] = False
+                    pred_conn.send(args)
+                    print(f'Request received. Waiting for Predictor {pred_i}...')
+                    prediction = pred_conn.recv()
+                    print(f'Predictor {pred_i} finished.')
+                    with predictor_states.get_lock():
+                        predictor_states[pred_i] = True
                     conn.send(prediction)
                     return
             time.sleep(10)
@@ -44,7 +44,8 @@ def handle_client(conn, predictors):
 
 def start_midman():
     manager = Manager()
-    predictors = manager.list()
+    predictor_conns = manager.list()
+    predictor_states = Array('b', [False] * 100)
 
     listener = Listener(midman_address)
     print('Server started. Listening for connections...')
@@ -52,7 +53,7 @@ def start_midman():
     while True:
         conn = listener.accept()
         print('Connection accepted from:', listener.last_accepted)
-        p = Process(target=handle_client, args=[conn, predictors])
+        p = Process(target=handle_client, args=[conn, predictor_conns, predictor_states])
         p.start()
 
 
