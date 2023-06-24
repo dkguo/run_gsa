@@ -53,9 +53,15 @@ def request_prediction(image, text_prompt):
 
 
 def predict(frame, camera_path, object_names):
+    if frame < 94:
+        return
+
     image_path = f'{camera_path}/rgb/{frame:06d}.png'
     save_dir = f'{camera_path}/object_pose/gsa'
     csv_path = f'{save_dir}/object_boxes.csv'
+
+    if os.path.exists(f'{save_dir}/plot/{frame:06d}.jpg'):
+        return
 
     text_prompt = "".join([f'{obj} . ' for obj in object_names])
     print(f'Predicting {image_path} with prompt: {text_prompt}')
