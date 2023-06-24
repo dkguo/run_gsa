@@ -80,7 +80,7 @@ def predict(frame, camera_path, object_names):
                         continue
                 cv2.imwrite(mask_path, mask)
                 with open(csv_path, 'a') as f:
-                    f.write(f'{scene_name}, {camera_name}, {frame}, {object_name}, gsa, {conf}, {box}\n')
+                    f.write(f'{scene_name}, {camera_name}, {frame}, {object_name}, gsa, {conf}, "{box.tolist()}"\n')
 
 
 if __name__ == '__main__':
@@ -107,3 +107,13 @@ if __name__ == '__main__':
                          [f'{scene_path}/{camera_name}' for camera_name in get_camera_names(scene_path)],
                          [object_names]))
                      )
+
+
+# if __name__ == '__main__':
+#     import glob
+#     import shutil
+#
+#     scene_name = 'scene_230313171600'
+#     paths = glob.glob(f'{dataset_path}/{scene_name}/*/object_pose/gsa')
+#     for path in paths:
+#         shutil.rmtree(path)
