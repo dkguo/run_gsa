@@ -53,7 +53,7 @@ def request_prediction(image, text_prompt):
 
 
 def predict(frame, camera_path, object_names):
-    if frame < 94:
+    if frame < 94 or frame > 550:
         return
 
     image_path = f'{camera_path}/rgb/{frame:06d}.png'
