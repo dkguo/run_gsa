@@ -30,7 +30,7 @@ class Predictor:
         print(f'Predictor {name}: Loading GroundingDINO model...')
         self.model = load_model(config_file, grounded_checkpoint, device=self.device)
 
-    def predict(self, image, text_prompt, box_threshold=0.32, text_threshold=0.2, iou_threshold=0.5):
+    def predict(self, image, text_prompt, box_threshold=0.3, text_threshold=0.2, iou_threshold=0.5):
         image_pil, image_transfromed = load_image_from_cv(image)
         boxes_filt, scores, pred_phrases = get_grounding_output(
             self.model, image_transfromed, text_prompt, box_threshold, text_threshold, device=self.device

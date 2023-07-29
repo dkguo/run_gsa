@@ -52,12 +52,12 @@ def request_prediction(image, text_prompt):
         return None
 
 
-def predict(frame, camera_path, object_names):
-    if frame < 94 or frame > 550:
+def predict(frame, camera_path, object_names, start_frame, end_frame):
+    if frame < start_frame or frame > end_frame:
         return
 
     image_path = f'{camera_path}/rgb/{frame:06d}.png'
-    save_dir = f'{camera_path}/object_pose/gsa'
+    save_dir = f'{camera_path}/masks'
     csv_path = f'{save_dir}/object_boxes.csv'
 
     if os.path.exists(f'{save_dir}/plot/{frame:06d}.jpg'):
@@ -90,9 +90,12 @@ def predict(frame, camera_path, object_names):
 
 
 if __name__ == '__main__':
-    scene_name = 'scene_230313171600'
+    scene_name = 'scene_230704142825'
+    object_names = ['bowl', 'hand', 'ketchup']
+    start_frame = 0
+    end_frame = 1000
+
     num_predictor = 10
-    object_names = ['bowl', 'hand']
     scene_path = f'{dataset_path}/{scene_name}'
 
     # create save directories
@@ -111,7 +114,7 @@ if __name__ == '__main__':
                      list(itertools.product(
                          range(get_num_frame(scene_path)),
                          [f'{scene_path}/{camera_name}' for camera_name in get_camera_names(scene_path)],
-                         [object_names]))
+                         [object_names], [start_frame], [end_frame]))
                      )
 
 
