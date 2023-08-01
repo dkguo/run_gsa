@@ -38,6 +38,7 @@ def save_plt(image, prediction, save_path):
         plt.text(x0, y0, label)
 
     plt.savefig(save_path, bbox_inches='tight', pad_inches=0)
+    plt.close()
 
 
 def request_prediction(image, text_prompt):
@@ -52,15 +53,30 @@ def request_prediction(image, text_prompt):
         return None
 
 
-def predict(frame, camera_path, object_names, start_frame, end_frame):
+def create_directories(scene_path, object_names):
+    for camera_name in get_camera_names(scene_path):
+        camera_path = f'{scene_path}/{camera_name}'
+        save_dir = f'{camera_path}/masks'
+        os.makedirs(save_dir, exist_ok=True)
+        os.makedirs(f'{save_dir}/plot', exist_ok=True)
+        for object_name in object_names:
+            os.makedirs(f'{save_dir}/{object_name}', exist_ok=True)
+        if not os.path.exists(f'{save_dir}/object_boxes.csv'):
+            with open(f'{save_dir}/object_boxes.csv', 'w') as f:
+                f.write('scene_name,camera_name,frame,object_name,predictor,confidence,box\n')
+
+
+def predict(object_names, scene_name, camera_name, frame, start_frame, end_frame, overwrite=False,
+            max_mask_precentage=0.15, max_box_precentage=0.3):
     if frame < start_frame or frame > end_frame:
         return
 
+    camera_path = f'{dataset_path}/{scene_name}/{camera_name}'
     image_path = f'{camera_path}/rgb/{frame:06d}.png'
     save_dir = f'{camera_path}/masks'
     csv_path = f'{save_dir}/object_boxes.csv'
 
-    if os.path.exists(f'{save_dir}/plot/{frame:06d}.jpg'):
+    if not overwrite and os.path.exists(f'{save_dir}/plot/{frame:06d}.jpg'):
         return
 
     text_prompt = "".join([f'{obj} . ' for obj in object_names])
@@ -75,13 +91,17 @@ def predict(frame, camera_path, object_names, start_frame, end_frame):
     save_plt(image, [labels, masks, boxes], f'{save_dir}/plot/{frame:06d}.jpg')
     for mask, label, box in zip(masks, labels, boxes):
         mask = mask[0].astype('uint8') * 255
+        if (mask.sum() / 255 > max_mask_precentage * mask.shape[0] * mask.shape[1] or
+                box[2] - box[0] > max_box_precentage * mask.shape[1] or
+                box[3] - box[1] > max_box_precentage * mask.shape[0]):
+            continue
         conf = extract_float_from_string(label)
         for object_name in object_names:
             if object_name in label:
                 mask_path = f'{save_dir}/{object_name}/{frame:06d}.png'
                 if os.path.exists(mask_path):
                     df = pd.read_csv(csv_path)
-                    max_conf = df.loc[(df['frame'] == frame) & (df['object_name'] == object_name), 'conf'].max()
+                    max_conf = df.loc[(df['frame'] == frame) & (df['object_name'] == object_name), 'confidence'].max()
                     if conf < max_conf:
                         continue
                 cv2.imwrite(mask_path, mask)
@@ -98,23 +118,13 @@ if __name__ == '__main__':
     num_predictor = 10
     scene_path = f'{dataset_path}/{scene_name}'
 
-    # create save directories
-    for camera_name in get_camera_names(scene_path):
-        camera_path = f'{scene_path}/{camera_name}'
-        save_dir = f'{camera_path}/object_pose/gsa'
-        os.makedirs(save_dir, exist_ok=True)
-        os.makedirs(f'{save_dir}/plot', exist_ok=True)
-        for object_name in object_names:
-            os.makedirs(f'{save_dir}/{object_name}', exist_ok=True)
-        with open(f'{save_dir}/object_boxes.csv', 'w') as f:
-            f.write('scene_name, camera_name, frame, obj_name, predictor, confidence, box\n')
+    create_directories(scene_path, object_names)
 
     with Pool(num_predictor) as pool:
         pool.starmap(predict,
                      list(itertools.product(
-                         range(get_num_frame(scene_path)),
-                         [f'{scene_path}/{camera_name}' for camera_name in get_camera_names(scene_path)],
-                         [object_names], [start_frame], [end_frame]))
+                         [object_names], [scene_name], get_camera_names(scene_path),
+                         range(get_num_frame(scene_path)), [start_frame], [end_frame]))
                      )
 
 
@@ -122,7 +132,7 @@ if __name__ == '__main__':
 #     import glob
 #     import shutil
 #
-#     scene_name = 'scene_230313171600'
-#     paths = glob.glob(f'{dataset_path}/{scene_name}/*/object_pose/gsa')
+#     scene_name = 'scene_230704142825'
+#     paths = glob.glob(f'{dataset_path}/{scene_name}/*/masks')
 #     for path in paths:
 #         shutil.rmtree(path)
