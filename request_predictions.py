@@ -66,11 +66,8 @@ def create_directories(scene_path, object_names):
                 f.write('scene_name,camera_name,frame,object_name,predictor,confidence,box\n')
 
 
-def predict(object_names, scene_name, camera_name, frame, start_frame, end_frame, overwrite=False,
-            max_mask_precentage=0.15, max_box_precentage=0.3):
-    if frame < start_frame or frame > end_frame:
-        return
-
+def predict_single_frame(object_names, scene_name, camera_name, frame, overwrite=False,
+                         max_mask_precentage=0.15, max_box_precentage=0.3):
     camera_path = f'{dataset_path}/{scene_name}/{camera_name}'
     image_path = f'{camera_path}/rgb/{frame:06d}.png'
     save_dir = f'{camera_path}/masks'
@@ -109,23 +106,25 @@ def predict(object_names, scene_name, camera_name, frame, start_frame, end_frame
                     f.write(f'{scene_name}, {camera_name}, {frame}, {object_name}, gsa, {conf}, "{box.tolist()}"\n')
 
 
+def predict_scene(scene_name, object_names, frame_nums, overwrite=False, num_predictor=10):
+    scene_path = f'{dataset_path}/{scene_name}'
+    create_directories(scene_path, object_names)
+    with Pool(num_predictor) as pool:
+        pool.starmap(predict_single_frame,
+                     list(itertools.product(
+                         [object_names], [scene_name], get_camera_names(scene_path),
+                         frame_nums, [overwrite]))
+                     )
+
+
 if __name__ == '__main__':
     scene_name = 'scene_230704142825'
     object_names = ['bowl', 'hand', 'ketchup']
-    start_frame = 0
-    end_frame = 1000
 
-    num_predictor = 10
     scene_path = f'{dataset_path}/{scene_name}'
-
     create_directories(scene_path, object_names)
 
-    with Pool(num_predictor) as pool:
-        pool.starmap(predict,
-                     list(itertools.product(
-                         [object_names], [scene_name], get_camera_names(scene_path),
-                         range(get_num_frame(scene_path)), [start_frame], [end_frame]))
-                     )
+    predict_scene(scene_name, object_names, range(get_num_frame(scene_path)), overwrite=True, num_predictor=10)
 
 
 # if __name__ == '__main__':

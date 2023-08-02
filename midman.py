@@ -9,11 +9,12 @@ def handle_client(conn, predictor_conns, predictor_states):
     hello_msg = conn.recv()
     if type(hello_msg) == str and 'predictor' in hello_msg:
         # register predictor
-        idx = len(predictor_conns)
-        conn.send(str(idx))
-        predictor_conns.append(conn)
-        predictor_states[idx] = True
-        print(f'Predictor {idx} connected.')
+        with predictor_states.get_lock():
+            idx = len(predictor_conns)
+            conn.send(str(idx))
+            predictor_conns.append(conn)
+            predictor_states[idx] = True
+            print(f'Predictor {idx} connected.')
     else:
         args = hello_msg
         while True:
