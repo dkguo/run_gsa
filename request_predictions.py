@@ -93,6 +93,7 @@ def predict_single_frame(object_names, scene_name, camera_name, frame, overwrite
                 box[3] - box[1] > max_box_precentage * mask.shape[0]):
             continue
         conf = extract_float_from_string(label)
+        label = label.replace(" _ ", "_")
         for object_name in object_names:
             if object_name in label:
                 mask_path = f'{save_dir}/{object_name}/{frame:06d}.png'
