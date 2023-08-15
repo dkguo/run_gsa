@@ -41,8 +41,15 @@ def save_plt(image, prediction, save_path):
     plt.close()
 
 
-def request_prediction(image, text_prompt):
-    server_address = ('128.2.205.54', 60888)  # ('localhost', 5000)
+def request_prediction(image, text_prompt, predictor='gsam'):
+    if predictor == 'yolo':
+        server_address = ('localhost', 6000)
+    elif predictor == 'gsam':
+        server_address = ('128.2.205.54', 60888)
+    else:
+        print(f'Unknown predictor: {predictor}')
+        return None
+
     try:
         with Client(server_address) as conn:
             conn.send((image, text_prompt))
@@ -66,7 +73,7 @@ def create_directories(scene_path, object_names):
                 f.write('scene_name,camera_name,frame,object_name,predictor,confidence,box\n')
 
 
-def predict_single_frame(object_names, scene_name, camera_name, frame, overwrite=False,
+def predict_single_frame(object_names, scene_name, camera_name, frame, overwrite=False, predictor='gsam',
                          max_mask_precentage=0.15, max_box_precentage=0.3):
     camera_path = f'{dataset_path}/{scene_name}/{camera_name}'
     image_path = f'{camera_path}/rgb/{frame:06d}.png'
@@ -80,7 +87,7 @@ def predict_single_frame(object_names, scene_name, camera_name, frame, overwrite
     print(f'Predicting {image_path} with prompt: {text_prompt}')
     image = cv2.imread(image_path)
     image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
-    prediction = request_prediction(image, text_prompt)
+    prediction = request_prediction(image, text_prompt, predictor)
     if prediction is None:
         return
 
@@ -107,14 +114,14 @@ def predict_single_frame(object_names, scene_name, camera_name, frame, overwrite
                     f.write(f'{scene_name}, {camera_name}, {frame}, {object_name}, gsa, {conf}, "{box.tolist()}"\n')
 
 
-def predict_scene(scene_name, object_names, frame_nums, overwrite=False, num_predictor=10):
+def predict_scene(scene_name, object_names, frame_nums, overwrite=False, num_predictor=10, predictor='gsam'):
     scene_path = f'{dataset_path}/{scene_name}'
     create_directories(scene_path, object_names)
     with Pool(num_predictor) as pool:
         pool.starmap(predict_single_frame,
                      list(itertools.product(
                          [object_names], [scene_name], get_camera_names(scene_path),
-                         frame_nums, [overwrite]))
+                         frame_nums, [overwrite], [predictor]))
                      )
 
 
