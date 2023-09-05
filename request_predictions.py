@@ -10,7 +10,7 @@ import numpy as np
 import pandas as pd
 
 from dataset_tools.config import dataset_path
-from dataset_tools.loaders import get_camera_names, get_num_frame
+from dataset_tools.utils import get_camera_names, get_num_frame, get_available_frames
 
 
 def extract_float_from_string(text):
@@ -126,13 +126,13 @@ def predict_scene(scene_name, object_names, frame_nums, overwrite=False, num_pre
 
 
 if __name__ == '__main__':
-    scene_name = 'scene_230704142825'
-    object_names = ['bowl', 'hand', 'ketchup']
+    scene_name = 'scene_230825131826'
+    object_names = ['blue_tip']
 
     scene_path = f'{dataset_path}/{scene_name}'
     create_directories(scene_path, object_names)
 
-    predict_scene(scene_name, object_names, range(get_num_frame(scene_path)), overwrite=True, num_predictor=10)
+    predict_scene(scene_name, object_names, [0], overwrite=True, num_predictor=10)
 
 
 # if __name__ == '__main__':
