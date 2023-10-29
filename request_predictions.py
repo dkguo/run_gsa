@@ -45,7 +45,7 @@ def request_prediction(image, text_prompt, predictor='gsam'):
     if predictor == 'yolo':
         server_address = ('localhost', 6000)
     elif predictor == 'gsam':
-        server_address = ('128.2.205.54', 60888)
+        server_address = ('localhost', 60888)
     else:
         print(f'Unknown predictor: {predictor}')
         return None
@@ -54,6 +54,8 @@ def request_prediction(image, text_prompt, predictor='gsam'):
         with Client(server_address) as conn:
             conn.send((image, text_prompt))
             prediction = conn.recv()
+            if prediction is None:
+                print(f'Error: prediction is None')
             return prediction
     except Exception as e:
         print(f'Error: {e}')
@@ -127,12 +129,12 @@ def predict_scene(scene_name, object_names, frame_nums, overwrite=False, num_pre
 
 if __name__ == '__main__':
     scene_name = get_newest_scene_name()
-    object_names = ['blue_tip', 'hand']
+    object_names = ['blue_tip', 'hand', 'blue_bowl']
 
     scene_path = f'{dataset_path}/{scene_name}'
     create_directories(scene_path, object_names)
 
-    predict_scene(scene_name, object_names, [0, 49, 62, 141, 155], overwrite=True, num_predictor=20)
+    predict_scene(scene_name, object_names, [230729, 231118], overwrite=True, num_predictor=20)
 
 
 # if __name__ == '__main__':

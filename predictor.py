@@ -1,6 +1,7 @@
 from multiprocessing import Process
 from multiprocessing.connection import Listener, Client
 
+import numpy as np
 import torch
 import torchvision
 
@@ -8,7 +9,7 @@ import sys
 
 from midman import midman_address
 
-gsa_path = '/home/jianrenw/project_data/Grounded-Segment-Anything'
+gsa_path = '/home/gdk/Repositories/Grounded-Segment-Anything'
 
 sys.path.append(gsa_path)
 
@@ -19,14 +20,14 @@ from utils import load_model, get_grounding_output, load_image_from_cv
 class Predictor:
     def __init__(self, name):
         self.name = name
+        self.device = 'cuda'
 
         checkpoint = f'{gsa_path}/sam_vit_h_4b8939.pth'
         print(f'Predictor {name}: Loading SAM predictor...')
-        self.predictor = SamPredictor(build_sam(checkpoint=checkpoint))
+        self.predictor = SamPredictor(build_sam(checkpoint=checkpoint).to(self.device))
 
         grounded_checkpoint = f'{gsa_path}/groundingdino_swint_ogc.pth'
         config_file = f'{gsa_path}/GroundingDINO/groundingdino/config/GroundingDINO_SwinT_OGC.py'
-        self.device = 'cuda'
         print(f'Predictor {name}: Loading GroundingDINO model...')
         self.model = load_model(config_file, grounded_checkpoint, device=self.device)
 
@@ -43,13 +44,13 @@ class Predictor:
             boxes_filt[i][:2] -= boxes_filt[i][2:] / 2
             boxes_filt[i][2:] += boxes_filt[i][:2]
 
-        boxes_filt = boxes_filt.cpu()
+        # boxes_filt = boxes_filt.cpu()
         nms_idx = torchvision.ops.nms(boxes_filt, scores, iou_threshold).numpy().tolist()
         boxes_filt = boxes_filt[nms_idx]
         pred_phrases = [pred_phrases[idx] for idx in nms_idx]
 
         self.predictor.set_image(image)
-        transformed_boxes = self.predictor.transform.apply_boxes_torch(boxes_filt, image.shape[:2])
+        transformed_boxes = self.predictor.transform.apply_boxes_torch(boxes_filt, image.shape[:2]).to(self.device)
         masks, _, _ = self.predictor.predict_torch(
             point_coords=None,
             point_labels=None,
@@ -57,7 +58,7 @@ class Predictor:
             multimask_output=False,
         )
 
-        return pred_phrases, masks.numpy(), boxes_filt.numpy()
+        return pred_phrases, masks.cpu().numpy(), boxes_filt.numpy()
 
 
 def start_predictor():
@@ -73,9 +74,15 @@ def start_predictor():
             prediction = predictor.predict(*args)
             print(f'Predictor {name}: Prediction done.')
             conn.send(prediction)
-        except:
+        except Exception as e:
+            print(f'Predictor {name}: Error: {e}')
             conn.send(None)
 
 
 if __name__ == '__main__':
     start_predictor()
+    # p = Predictor('test')
+    # image = np.random.randint(0, 255, (512, 512, 3), dtype='uint8')
+    # text_prompt = 'person . '
+    # p.predict(image, text_prompt)
+

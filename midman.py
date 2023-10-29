@@ -2,7 +2,7 @@ import time
 from multiprocessing import Process, Manager, Array
 from multiprocessing.connection import Listener
 
-midman_address = ('128.2.205.54', 60888)
+midman_address = ('localhost', 60888)
 
 
 def handle_client(conn, predictor_conns, predictor_states):
@@ -22,15 +22,16 @@ def handle_client(conn, predictor_conns, predictor_states):
                 if is_idle:
                     with predictor_states.get_lock():
                         predictor_states[pred_i] = False
+                    start_time = time.time()
                     pred_conn.send(args)
                     print(f'Request received. Waiting for Predictor {pred_i}...')
                     prediction = pred_conn.recv()
-                    print(f'Predictor {pred_i} finished.')
+                    print(f'Predictor {pred_i} finished in {time.time() - start_time:.3f} seconds.')
                     with predictor_states.get_lock():
                         predictor_states[pred_i] = True
                     conn.send(prediction)
                     return
-            time.sleep(10)
+            # time.sleep(0.1)
 
 
 def start_midman():
