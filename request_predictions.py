@@ -32,6 +32,7 @@ def save_plt(image, prediction, save_path):
         plt.imshow(mask_image)
 
     for box, label in zip(boxes, labels):
+        label = label.replace(" _ ", "_")
         x0, y0 = box[0], box[1]
         w, h = box[2] - box[0], box[3] - box[1]
         plt.gca().add_patch(plt.Rectangle((x0, y0), w, h, edgecolor='green', facecolor=(0, 0, 0, 0), lw=2))
@@ -76,7 +77,7 @@ def create_directories(scene_path, object_names):
 
 
 def predict_single_frame(object_names, scene_name, camera_name, frame, overwrite=False, predictor='gsam',
-                         max_mask_precentage=0.15, max_box_precentage=0.3):
+                         max_mask_precentage=0.65, max_box_precentage=0.7):
     camera_path = f'{dataset_path}/{scene_name}/{camera_name}'
     image_path = f'{camera_path}/rgb/{frame:06d}.png'
     save_dir = f'{camera_path}/masks'
@@ -128,13 +129,13 @@ def predict_scene(scene_name, object_names, frame_nums, overwrite=False, num_pre
 
 
 if __name__ == '__main__':
-    scene_name = get_newest_scene_name()
-    object_names = ['blue_tip', 'hand', 'blue_bowl']
+    scene_name = 'scene_231119172544'
+    object_names = ['blue_cup']
 
     scene_path = f'{dataset_path}/{scene_name}'
     create_directories(scene_path, object_names)
 
-    predict_scene(scene_name, object_names, [230729, 231118], overwrite=True, num_predictor=20)
+    predict_scene(scene_name, object_names, [172734], overwrite=True, num_predictor=20)
 
 
 # if __name__ == '__main__':
