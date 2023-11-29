@@ -10,6 +10,7 @@ import numpy as np
 import pandas as pd
 
 from dataset_tools.config import dataset_path
+from dataset_tools.record.step_1_record_multiple_d435 import D435s
 from dataset_tools.utils.name import get_camera_names, get_newest_scene_name
 
 
@@ -77,7 +78,7 @@ def create_directories(scene_path, object_names):
 
 
 def predict_single_frame(object_names, scene_name, camera_name, frame, overwrite=False, predictor='gsam',
-                         max_mask_precentage=0.65, max_box_precentage=0.7):
+                         max_mask_precentage=0.15, max_box_precentage=0.3):
     camera_path = f'{dataset_path}/{scene_name}/{camera_name}'
     image_path = f'{camera_path}/rgb/{frame:06d}.png'
     save_dir = f'{camera_path}/masks'
@@ -129,13 +130,15 @@ def predict_scene(scene_name, object_names, frame_nums, overwrite=False, num_pre
 
 
 if __name__ == '__main__':
-    scene_name = 'scene_231119172544'
-    object_names = ['blue_cup']
+    scene_name = get_newest_scene_name()
+    cameras = D435s(scene_name, init_recorder=False)
+    frame_num = cameras.capture()
+    object_names = ['blue_tip', 'green_tip']
 
     scene_path = f'{dataset_path}/{scene_name}'
     create_directories(scene_path, object_names)
 
-    predict_scene(scene_name, object_names, [172734], overwrite=True, num_predictor=20)
+    predict_scene(scene_name, object_names, [frame_num], overwrite=True, num_predictor=20)
 
 
 # if __name__ == '__main__':
