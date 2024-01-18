@@ -54,7 +54,7 @@ def request_prediction(image, text_prompt, predictor='gsam'):
 
     try:
         with Client(server_address) as conn:
-            conn.send((image, text_prompt))
+            conn.send((image, text_prompt, 0.2, 0.2, 0.5))  # box_threshold, text_threshold, iou_threshold
             prediction = conn.recv()
             if prediction is None:
                 print(f'Error: prediction is None')
@@ -78,7 +78,8 @@ def create_directories(scene_path, object_names):
 
 
 def predict_single_frame(object_names, scene_name, camera_name, frame, overwrite=False, predictor='gsam',
-                         max_mask_precentage=0.15, max_box_precentage=0.3):
+                         max_mask_precentage=0.15, max_box_precentage=0.3,
+                         merge_all_masks=False, select_mask_manually=False):
     camera_path = f'{dataset_path}/{scene_name}/{camera_name}'
     image_path = f'{camera_path}/rgb/{frame:06d}.png'
     save_dir = f'{camera_path}/masks'
@@ -108,37 +109,61 @@ def predict_single_frame(object_names, scene_name, camera_name, frame, overwrite
         for object_name in object_names:
             if object_name in label:
                 mask_path = f'{save_dir}/{object_name}/{frame:06d}.png'
-                if os.path.exists(mask_path):
-                    df = pd.read_csv(csv_path)
-                    max_conf = df.loc[(df['frame'] == frame) & (df['object_name'] == object_name), 'confidence'].max()
-                    if conf < max_conf:
+                if select_mask_manually:
+                    cv2.imshow('mask', cv2.addWeighted(image, 0.5,
+                                                       cv2.cvtColor(mask.copy(), cv2.COLOR_GRAY2BGR), 0.5, 0))
+                    key = cv2.waitKey(0)
+                    cv2.destroyAllWindows()
+                    if key != ord('s'):
                         continue
+                    if os.path.exists(mask_path):
+                        prev_mask = cv2.imread(mask_path, cv2.IMREAD_GRAYSCALE)
+                        mask = np.maximum(mask, prev_mask).astype('uint8')
+
+                elif os.path.exists(mask_path):
+                    if merge_all_masks:
+                        prev_mask = cv2.imread(mask_path, cv2.IMREAD_GRAYSCALE)
+                        mask = np.maximum(mask, prev_mask).astype('uint8')
+                    else:
+                        df = pd.read_csv(csv_path)
+                        max_conf = df.loc[(df['frame'] == frame) & (df['object_name'] == object_name), 'confidence'].max()
+                        if conf < max_conf:
+                            continue
                 cv2.imwrite(mask_path, mask)
                 with open(csv_path, 'a') as f:
                     f.write(f'{scene_name}, {camera_name}, {frame}, {object_name}, gsa, {conf}, "{box.tolist()}"\n')
 
 
-def predict_scene(scene_name, object_names, frame_nums, overwrite=False, num_predictor=10, predictor='gsam'):
+def predict_scene(scene_name, object_names, frame_nums, overwrite=False, num_predictor=10, predictor='gsam',
+                  max_mask_precentage=0.15, max_box_precentage=0.3,
+                  merge_all_masks=False, select_mask_manually=False):
     scene_path = f'{dataset_path}/{scene_name}'
     create_directories(scene_path, object_names)
-    with Pool(num_predictor) as pool:
-        pool.starmap(predict_single_frame,
-                     list(itertools.product(
-                         [object_names], [scene_name], get_camera_names(scene_path),
-                         frame_nums, [overwrite], [predictor]))
-                     )
+
+    if select_mask_manually:
+        for camera_name in get_camera_names(scene_path):
+            predict_single_frame(object_names, scene_name, camera_name, frame_nums[0], overwrite, predictor,
+                                 max_mask_precentage, max_box_precentage, merge_all_masks, select_mask_manually)
+    else:
+        with Pool(num_predictor) as pool:
+            pool.starmap(predict_single_frame,
+                         list(itertools.product(
+                             [object_names], [scene_name], get_camera_names(scene_path),
+                             frame_nums, [overwrite], [predictor], [max_mask_precentage], [max_box_precentage],
+                             [merge_all_masks], [select_mask_manually]))
+                         )
 
 
 if __name__ == '__main__':
-    scene_name = get_newest_scene_name()
-    cameras = D435s(scene_name, init_recorder=False)
-    frame_num = cameras.capture()
-    object_names = ['blue_tip', 'green_tip']
+    scene_name = 'scene_231116075559_blue_cup'
+    # cameras = D435s(scene_name, init_recorder=False)
+    # frame_num = cameras.capture()
+    object_names = ['hand']
 
     scene_path = f'{dataset_path}/{scene_name}'
     create_directories(scene_path, object_names)
 
-    predict_scene(scene_name, object_names, [frame_num], overwrite=True, num_predictor=20)
+    predict_scene(scene_name, object_names, [65], overwrite=True, num_predictor=20, select_mask_manually=True)
 
 
 # if __name__ == '__main__':
